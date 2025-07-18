@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QApplication, QGridLayout, QLabel, QWidget, \
     QLineEdit, QComboBox, QPushButton
 from PySide6.QtGui import  QAction
 import sys
+import sqlite3
 
 
 
@@ -28,7 +29,20 @@ class MainWindow(QMainWindow):
         self.tabel.verticalHeader().setVisible(False)
         self.setCentralWidget(self.tabel)
 
+    def load_data(self):
+        connection = sqlite3.connect("database.db")
+        result = connection.execute("SELECT * FROM students")
+        # reset the table - used to not duplicate the data
+        self.tabel.setRowCount(0)
+        for row_number, row_data in enumerate(result):
+            self.tabel.insertRow(row_number)
+            for column_number, data in enumerate(row_data):
+                self.tabel.setItem(row_number, column_number, QTableWidgetItem(str(data)))
+
+        connection.close()
+
 app = QApplication(sys.argv)
 main_window = MainWindow()
 main_window.show()
+main_window.load_data()
 sys.exit(app.exec())
