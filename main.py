@@ -2,12 +2,10 @@ from PyQt6.QtWidgets import QToolBar
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QGridLayout, QLabel, QWidget, \
     QMainWindow, QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, \
-    QLineEdit, QComboBox, QPushButton, QToolBar, QStatusBar
+    QLineEdit, QComboBox, QPushButton, QToolBar, QStatusBar, QMessageBox
 from PySide6.QtGui import  QAction, QIcon
 import sys
 import sqlite3
-
-# QMainWindow allows us to division the window - tool bar, status bar
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -156,10 +154,6 @@ class SearchDialog(QDialog):
 
         self.setWindowTitle("Search Student")
 
-        # Set dimensions of window
-        self.setFixedWidth(300)
-        self.setFixedHeight(300)
-
         layout = QVBoxLayout()
 
         # Add student name widget
@@ -176,16 +170,10 @@ class SearchDialog(QDialog):
 
     def search(self):
         name = self.student_name.text()
-        connection = sqlite3.connect("database.db")
-        cursor = connection.cursor()
-        result = cursor.execute("SELECT * FROM students WHERE name = ?", (name,))
-        rows = list(result)
-        items = main_window.tabel.findItems(name, Qt.MatchFlag.MatchFixedString)
+
+        items = main_window.tabel.findItems(name, Qt.MatchFlag.MatchContains)
         for item in items:
             main_window.tabel.item(item.row(), 1).setSelected(True)
-
-        cursor.close()
-        connection.close()
 
 
 class EditDialog(QDialog):
@@ -235,7 +223,8 @@ class EditDialog(QDialog):
 
         connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
-        cursor.execute("UPDATE students SET name = ?, course = ?, mobile = ? WHERE id = ?",(name, course, mobile, self.student_id))
+        cursor.execute("UPDATE students SET name = ?, course = ?, mobile = ? WHERE id = ?",
+                       (name, course, mobile, self.student_id))
         connection.commit()
         cursor.close()
         connection.close()
@@ -243,7 +232,52 @@ class EditDialog(QDialog):
 
 
 class DeleteDialog(QDialog):
-    pass
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Delete Student Data")
+
+        # Dimensions of Delete window
+        self.setFixedSize(200, 100)
+
+        layout = QGridLayout()
+
+        # Add widgets
+        confirmation = QLabel("Are you sure you want to delete?")
+        layout.addWidget(confirmation, 0, 0, 1, 2)
+
+        yes = QPushButton("Yes")
+        yes.clicked.connect(self.delete_record)
+        layout.addWidget(yes, 1, 0)
+
+        no = QPushButton("No")
+        no.clicked.connect(self.close)
+        layout.addWidget(no, 1, 1)
+
+        self.setLayout(layout)
+
+    def delete_record(self):
+        # Get the selected row and student id
+        index = main_window.tabel.currentRow()
+        student_id = main_window.tabel.item(index, 0).text()
+        print(student_id)
+
+        # Remove student from database
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM students WHERE id = ?", (student_id, ))
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        # Refresh data from tabel
+        main_window.load_data()
+        self.close()
+
+        confirmation_widget = QMessageBox()
+        confirmation_widget.setWindowTitle("Success")
+        confirmation_widget.setText("The record was deleted successfully")
+        confirmation_widget.exec()
 
 
 app = QApplication(sys.argv)
