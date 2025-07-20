@@ -1,3 +1,5 @@
+from idlelib.help_about import AboutDialog
+
 from PyQt6.QtWidgets import QToolBar
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QGridLayout, QLabel, QWidget, \
@@ -16,19 +18,20 @@ class MainWindow(QMainWindow):
 
         # Add elements to menuBar
         file_menu_item = self.menuBar().addMenu("&File")
-        help_menu_item = self.menuBar().addMenu("&Help")
         search_menu_item = self.menuBar().addMenu("&Edit")
+        help_menu_item = self.menuBar().addMenu("&Help")
 
         add_student_action = QAction(QIcon("icons/add.png"), "Add Student", self)
         add_student_action.triggered.connect(self.insert)
         file_menu_item.addAction(add_student_action)
 
-        about_action = QAction("About", self)
-        help_menu_item.addAction(about_action)
-
         search_action = QAction(QIcon("icons/search.png"), "Search", self)
         search_action.triggered.connect(self.search)
         search_menu_item.addAction(search_action)
+
+        about_action = QAction("About", self)
+        about_action.triggered.connect(self.about)
+        help_menu_item.addAction(about_action)
 
         # Create table
         self.tabel =  QTableWidget()
@@ -98,6 +101,19 @@ class MainWindow(QMainWindow):
         dialog = DeleteDialog()
         dialog.exec()
 
+    def about(self):
+        dialog = AboutDialog()
+        dialog.exec()
+
+
+class AboutDialog(QMessageBox):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("About")
+        content = """This application was created during a course. Feel free to use it."""
+        self.setText(content)
+        self.exec()
 
 
 class InsertDialog(QDialog):
